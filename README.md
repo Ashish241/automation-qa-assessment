@@ -13,4 +13,5 @@ Both HTTP nodes use an error output connected to a failure-message Code node and
 Import `Task2_Workflow_Ashish_Kumar_Ishwar.json` into a compatible n8n instance. Create/select a Telegram credential, set your own Chat ID in all three Telegram nodes, and start your bot chat. Execute manually. Publish/activate to enable the hourly Schedule Trigger and keep n8n running. Export is inactive; timezone is Asia/Kolkata. Sample data produces a repeated digest rather than live news. Screenshots include the canvas, successful execution and failure path. Optional uptime bonus was not implemented.
 
 ## Walkthrough
-Add the shareable recording link here before submission.
+[Loom video link.](https://www.loom.com/share/cb82535ef6dd4801959076ffdd8c86a7)
+Added a loom video explaining whatever i have done in this assessment.
