@@ -1,0 +1,312 @@
+{
+  "name": "Task2 — Post Digest — Ashish",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        0
+      ],
+      "id": "5c8c3fbb-8383-4047-b233-9d8091b728a8",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "url": "https://jsonplaceholder.typicode.com/posts",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        224,
+        0
+      ],
+      "id": "8c5ad858-d1b0-45eb-8226-a402c8f00637",
+      "name": "Fetch Posts",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const posts = $input.all().map(item => item.json);\n\nconst selected = posts\n  .filter(post =>\n    Number.isInteger(post.id) &&\n    Number.isInteger(post.userId) &&\n    typeof post.title === 'string' &&\n    typeof post.body === 'string'\n  )\n  .sort((a, b) => b.id - a.id)\n  .slice(0, 5);\n\nif (selected.length === 0) {\n  throw new Error('The API returned no valid posts.');\n}\n\nreturn [{\n  json: {\n    posts: selected,\n    topPost: selected[0],\n    count: selected.length\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        0
+      ],
+      "id": "d804c281-3c99-4380-ae30-2f06908c2138",
+      "name": "Select Top 5"
+    },
+    {
+      "parameters": {
+        "url": "={{ 'https://jsonplaceholder.typicode.com/users/' + $json.topPost.userId }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        576,
+        0
+      ],
+      "id": "b70ebcf1-457d-4a59-af5a-25cad0e1125b",
+      "name": "Fetch Author",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $('Select Top 5').first().json;\nconst author = $input.first().json;\n\nif (typeof author.name !== 'string') {\n  throw new Error('The author response is missing a name.');\n}\n\nconst wordCount = data.topPost.body\n  .trim()\n  .split(/\\s+/)\n  .filter(Boolean)\n  .length;\n\nconst titles = data.posts.map((post, index) =>\n  `${index + 1}. ${post.title}`\n);\n\nconst message = [\n  'POST DIGEST — SAMPLE DATA',\n  `Generated: ${new Date().toISOString()}`,\n  '',\n  ...titles,\n  '',\n  `Top post author: ${author.name}`,\n  `Company: ${author.company?.name ?? 'Not available'}`,\n  `Top post length: ${wordCount} words`\n].join('\\n');\n\nreturn [{\n  json: {\n    message,\n    wordCount,\n    threshold: 30\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        0
+      ],
+      "id": "f3a2bc68-bcd3-4a9b-b3a4-cd9fcb075c0f",
+      "name": "Build Digest"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "0b0039a9-fd6b-4724-b34e-f7dbb5efe78f",
+              "leftValue": "={{ $json.wordCount }}",
+              "rightValue": 30,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1024,
+        0
+      ],
+      "id": "69e8711e-4d48-4326-ae52-918d3c3c05f9",
+      "name": "Long Post?"
+    },
+    {
+      "parameters": {
+        "chatId": "1756857777",
+        "text": "={{ 'STANDARD BRIEF\\n\\n' + $json.message }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1248,
+        96
+      ],
+      "id": "55bc41fc-17e9-4d9d-af9a-60eccf24169d",
+      "name": "Send Standard Digest",
+      "webhookId": "1a8bafba-f7c9-47f4-8d6d-ddbe1f533822",
+      "credentials": {
+        "telegramApi": {
+          "id": "ny3IUdLepkREd1d4",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "1756857777",
+        "text": "={{ 'LONG POST BRIEF\\n\\n' + $json.message }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1232,
+        -128
+      ],
+      "id": "826fc4d2-49f3-472a-8b5d-2b3b9eb71614",
+      "name": "Send Long Digest",
+      "webhookId": "1a8bafba-f7c9-47f4-8d6d-ddbe1f533822",
+      "credentials": {
+        "telegramApi": {
+          "id": "ny3IUdLepkREd1d4",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const failure = $input.first().json;\n\nconst detail =\n  typeof failure.error === 'string'\n    ? failure.error\n    : failure.error?.message ??\n      failure.message ??\n      'API request failed. Check the execution details.';\n\nreturn [{\n  json: {\n    message: [\n      'DIGEST FAILED',\n      `Time: ${new Date().toISOString()}`,\n      `Details: ${String(detail).slice(0, 500)}`,\n      'The normal digest could not be completed.'\n    ].join('\\n')\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        496,
+        192
+      ],
+      "id": "1e703229-fdfa-4451-9486-f0802453d241",
+      "name": "Prepare API Failure"
+    },
+    {
+      "parameters": {
+        "chatId": "1756857777",
+        "text": "={{ $json.message }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        704,
+        192
+      ],
+      "id": "b3f08b42-fe7e-4c20-a83d-c0de2d931e58",
+      "name": "Send Failure Alert",
+      "webhookId": "1a8bafba-f7c9-47f4-8d6d-ddbe1f533822",
+      "credentials": {
+        "telegramApi": {
+          "id": "ny3IUdLepkREd1d4",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fetch Posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Posts": {
+      "main": [
+        [
+          {
+            "node": "Select Top 5",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare API Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Select Top 5": {
+      "main": [
+        [
+          {
+            "node": "Fetch Author",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Author": {
+      "main": [
+        [
+          {
+            "node": "Build Digest",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare API Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Digest": {
+      "main": [
+        [
+          {
+            "node": "Long Post?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Long Post?": {
+      "main": [
+        [
+          {
+            "node": "Send Long Digest",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Standard Digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare API Failure": {
+      "main": [
+        [
+          {
+            "node": "Send Failure Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "timezone": "Asia/Kolkata",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "ccfcbe5c-d6f4-47ba-be40-8234a0a7e177",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "69c5c1f3ef416f9f8f5021497e127825d30d853eaae313b67d8629dc351bbc56"
+  },
+  "nodeGroups": [],
+  "id": "kDeU5RxuSbRwE302",
+  "tags": []
+}

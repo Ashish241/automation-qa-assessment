@@ -1,0 +1,6 @@
+1. Create a public GitHub repository named automation-qa-assessment.
+2. Extract this ZIP. Upload the contents of Oytra_assignment, not just the ZIP, so README and PDF open in GitHub.
+3. Record a 3-5 minute Loom/screen walkthrough: QA evidence and limitations; 503 root-cause hypothesis; nodes and top-five transformation; enrichment; 30-word threshold; successful Telegram message; failed API alert.
+4. Add the recording URL to README.md, replacing its final placeholder sentence.
+5. Verify the repository and recording are accessible, then submit both links.
+6. The workflow is the supplied export, unchanged. Fetch Author has default timeout; optionally set 10000 ms locally and re-export, then update README if changed.
